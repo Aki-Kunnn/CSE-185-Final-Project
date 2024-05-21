@@ -2,7 +2,7 @@
 
 This is a demonstration project for CSE185. It implements a recreation of the kmergenie tool. See the [Kmergenie](http://kmergenie.bx.psu.edu/) page for more details.
 
-#Install Instructions
+# Install Instructions
 
 # Basic Usage
 
