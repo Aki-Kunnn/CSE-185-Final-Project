@@ -1,6 +1,8 @@
 # CSE-185-Final-Project
 
-This is the readme file for the project
+This is a demonstration project for CSE185. It implements a recreation of the kmergenie tool. See the `[my website]([https://www.example.com](http://kmergenie.bx.psu.edu/))` page for more details.
+
+# File Format
 
 # Contributors
 
