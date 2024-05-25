@@ -6,15 +6,43 @@ This is a demonstration project for CSE185. It implements a recreation of the km
 
 To install the package, clone the repository and use `pip`:
 
+```bash
 git clone https://github.com/yourusername/cse-185-final-project.git
+
 cd cse-185-final-project
+
 pip install .
+```
 
 # Basic Usage
+Once package is successfully installed, it can be called from the command line like many other tools. 
+
+```bash
+vanheusden -k <kmerLength> <reads>
+```
+
+For example:
+```bash
+vanheusden -k 15 example_file.fasta
+```
+
+The following command will compute kmers of length 15, first by reading the file and eventually outputting the results to a file named 'example_file.histo.tsv'
 
 # Our Tool Options
 
+- -k, --kmerLength: The length of the k-mers to analyze.
+  
+- reads: The file containing DNA sequencing reads.
+
 # File Format
+
+The file should be in FASTA format.
+
+The output file will be in TSV (Tab-Separated Values) format, with two columns:
+
+Count: The count of k-mers.
+Number of k-mers: The number of k-mers that appeared that many times.
+
 
 # Contributors
 
