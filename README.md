@@ -26,21 +26,9 @@ python3 vanheusden.py -k 50 g10000_n1000_l100_e0.001.fasta
 ```
 
 # Options
-python3 vanheusden.py generate 
+python3 vanheusden.py generate -g [genome size] -n [number of reads] -l [length of reads] -e [error rate]
 
-    -g [genome size] 
-
-    -n [number of reads] 
-
-    -l [length of reads]
-
-    -e [error rate]
-
-python3 vanheusden.py estimate
-
-    -k [kmer length]
-    
-    [fasta file]
+python3 vanheusden.py estimate -k [kmer length] [fasta file]
 
 # Contributors
 
