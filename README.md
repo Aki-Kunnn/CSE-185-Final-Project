@@ -9,40 +9,38 @@ To install the package, clone the repository and use `pip`:
 ```bash
 git clone https://github.com/yourusername/cse-185-final-project.git
 
-cd cse-185-final-project
-
-pip install .
+cd vanheusden
 ```
 
-# Basic Usage
-Once package is successfully installed, it can be called from the command line like many other tools. 
+# Example Usage
+The following command generated a random genome of length 10,000 and used that to simulate a fasta file with 1,000 reads of length 100 and an error rate of 0.001.
+
+```
+python3 vanheusden.py generate -g 10000 -n 1000 -l 100 -e 0.001
+```
+
+Then the following command estimated the genome size to be 10199: 
 
 ```bash
-vanheusden -k <kmerLength> <reads>
+python3 vanheusden.py -k 50 g10000_n1000_l100_e0.001.fasta
 ```
 
-For example:
-```bash
-vanheusden -k 15 example_file.fasta
-```
+# Options
+python3 vanheusden.py generate 
 
-The following command will compute kmers of length 15, first by reading the file and eventually outputting the results to a file named 'example_file.histo.tsv'
+    -g [genome size] 
 
-# Our Tool Options
+    -n [number of reads] 
 
-- -k, --kmerLength: The length of the k-mers to analyze.
-  
-- reads: The file containing DNA sequencing reads.
+    -l [length of reads]
 
-# File Format
+    -e [error rate]
 
-The file should be in FASTA format.
+python3 vanheusden.py estimate
 
-The output file will be in TSV (Tab-Separated Values) format, with two columns:
-
-Count: The count of k-mers.
-Number of k-mers: The number of k-mers that appeared that many times.
-
+    -k [kmer length]
+    
+    [fasta file]
 
 # Contributors
 
