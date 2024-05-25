@@ -7,7 +7,7 @@ This is a demonstration project for CSE185. It implements a recreation of the km
 Clone the repository and change directory:
 
 ```bash
-git clone https://github.com/yourusername/cse-185-final-project.git
+git clone https://github.com/Aki-Kunnn/vanheusden_est_CSE185.git
 
 cd vanheusden
 ```
