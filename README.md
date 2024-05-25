@@ -4,6 +4,12 @@ This is a demonstration project for CSE185. It implements a recreation of the km
 
 # Install Instructions
 
+To install the package, clone the repository and use `pip`:
+
+git clone https://github.com/yourusername/cse-185-final-project.git
+cd cse-185-final-project
+pip install .
+
 # Basic Usage
 
 # Our Tool Options
