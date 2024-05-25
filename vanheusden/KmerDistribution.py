@@ -1,124 +1,136 @@
+# vanheusden/kmer_analysis.py
+
 import argparse
 import hashlib
 from typing import List
 
-# inputs
-parser = argparse.ArgumentParser(prog="Vanheusden", 
-                                 description="kmer distribution of reads\ncol 1: count, col 2: number of kmers that appeared count times")
-parser.add_argument("-k", "--kmerLength")
-#parser.add_argument('-i', '--ignoreDirectionality', action='store_true', required=False)
-parser.add_argument("reads")
-args = parser.parse_args()
+def main():
+    """
+    Main function to parse arguments, read input file, compute k-mer distribution, 
+    and write results to output file.
+    """
+    parser = argparse.ArgumentParser(prog="Vanheusden", 
+                                     description="kmer distribution of reads\ncol 1: count, col 2: number of kmers that appeared count times")
+    parser.add_argument("-k", "--kmerLength", required=True, type=int, help="Length of the k-mers")
+    parser.add_argument("reads", help="Input file containing DNA sequencing reads")
+    args = parser.parse_args()
 
-k = int(args.kmerLength)
-#ignoreDirectionality = args.ignoreDirectionality
-output = args.reads.split(".")[0] + ".histo.tsv"
-input = args.reads
-bases = ["A", "T", "C", "G"]
+    k = args.kmerLength
+    output = args.reads.split(".")[0] + ".histo.tsv"
+    input = args.reads
+    bases = ["A", "T", "C", "G"]
 
-# histogram
-distribution = {}
-for i in range(1, 500):
-    distribution[i] = 0
+    distribution = {i: 0 for i in range(1, 500)}
+    width = 1000
+    initMin = 9999
+    numFunctions = 10
 
-# other parameters
-width = 1000
-initMin = 9999
-numFunctions = 10
+    def ReverseComplement(pattern: str) -> str:
+        """
+        Compute the reverse complement of a DNA sequence.
+        
+        Args:
+            pattern (str): DNA sequence.
+        
+        Returns:
+            str: Reverse complement of the DNA sequence.
+        """
+        reverse_complement = ""
+        start_idx = len(pattern) - 1
+        for i in range(start_idx, -1, -1):
+            if pattern[i] == "A":
+                reverse_complement += "T"
+            elif pattern[i] == "T":
+                reverse_complement += "A"
+            elif pattern[i] == "C":
+                reverse_complement += "G"
+            elif pattern[i] == "G":
+                reverse_complement += "C"
+        return reverse_complement
 
-# for ignoreDirectionality
-def ReverseComplement(pattern: str) -> str:
-    reverse_complement = ""
-    start_idx = len(pattern) - 1
-    for i in range(start_idx, -1, -1):
-        if pattern[i] == "A":
-            reverse_complement += "T"
-        if pattern[i] == "T":
-            reverse_complement += "A"
-        if pattern[i] == "C":
-            reverse_complement += "G"
-        if pattern[i] == "G":
-            reverse_complement += "C"
-    return reverse_complement
+    countMinSketch = [[0 for j in range(1000)] for i in range(numFunctions)]
 
-# Count-min sketch
-countMinSketch = [[0 for j in range(1000)] for i in range(numFunctions)]
+    def ChooseStrand(kmer: str) -> str:
+        """
+        Choose the lexicographically smaller k-mer between a k-mer and its reverse complement.
+        
+        Args:
+            kmer (str): Original k-mer.
+        
+        Returns:
+            str: Lexicographically smaller k-mer.
+        """
+        kmerRev = ReverseComplement(kmer)
+        if hash(kmer) < hash(kmerRev):
+            return kmer
+        return kmerRev
 
-# choose between strand and reverse complement
-def ChooseStrand(kmer: str) -> str:
-    kmerRev = ReverseComplement(kmer)
-    if hash(kmer) < hash(kmerRev):
-        return kmer
-    return kmerRev
+    def Hashes(kmer: str) -> List[int]:
+        """
+        Generate a list of hash values for a k-mer using multiple hash functions.
+        
+        Args:
+            kmer (str): k-mer to be hashed.
+        
+        Returns:
+            List[int]: List of hash values.
+        """
+        hashes = []
+        functions = [
+            hashlib.sha1(), hashlib.sha224(), hashlib.sha256(), 
+            hashlib.sha384(), hashlib.sha512(), hashlib.sha3_224(), 
+            hashlib.sha3_256(), hashlib.sha3_384(), hashlib.sha3_512(), 
+            hashlib.md5()
+        ]
+        code = kmer.encode("utf-8")
+        for i in range(numFunctions):
+            functions[i].update(code)
+            hashes.append(int(functions[i].hexdigest(), 16) % width)
+        return hashes
 
-# return a list of hash values
-def Hashes(kmer: str) -> List[int]:
-    hashes = []
+    def updateCount(kmer: str):
+        """
+        Update the Count-Min Sketch with the given k-mer.
+        
+        Args:
+            kmer (str): k-mer to be added to the Count-Min Sketch.
+        """
+        for i, j in enumerate(Hashes(kmer)):
+            countMinSketch[i][j] += 1
 
-    # initialize hash functions
-    functions = []
-    functions.append(hashlib.sha1())
-    functions.append(hashlib.sha224())
-    functions.append(hashlib.sha256())
-    functions.append(hashlib.sha384())
-    functions.append(hashlib.sha512())
-    functions.append(hashlib.sha3_224())
-    functions.append(hashlib.sha3_256())
-    functions.append(hashlib.sha3_384())
-    functions.append(hashlib.sha3_512())
-    functions.append(hashlib.md5())
+    def getCount(kmer: str) -> int:
+        """
+        Retrieve the count for a k-mer from the Count-Min Sketch.
+        
+        Args:
+            kmer (str): k-mer whose count is to be retrieved.
+        
+        Returns:
+            int: Count of the k-mer.
+        """
+        return min(countMinSketch[i][j] for i, j in enumerate(Hashes(kmer)))
 
-    # update hash functions
-    code = kmer.encode("utf-8")
-    for i in range(numFunctions):
-        functions[i].update(code)
+    with open(input, "r") as file:
+        for line in file:
+            if line[0] in bases:
+                line = line.strip()
+                for i in range(len(line) - k + 1):
+                    kmer = ChooseStrand(line[i : i + k])
+                    updateCount(kmer)
 
-    # compute hash values
-    for i in range(numFunctions):
-        hashes.append(int(functions[i].hexdigest(), 16) % width)
-    return hashes
+    with open(input, "r") as file:
+        for line in file:
+            if line[0] in bases:
+                line = line.strip()
+                for i in range(len(line) - k + 1):
+                    kmer = ChooseStrand(line[i : i + k])
+                    distribution[getCount(kmer)] += 1
 
-# update countMinSketch
-def updateCount(kmer: str):
-    i = 0
-    for j in Hashes(kmer):
-        countMinSketch[i][j] += 1
-        i += 1
-
-# return counts for a kmer
-def getCount(kmer: str) -> int:
-    min = initMin
-    i = 0
-    for j in Hashes(kmer):
-        if countMinSketch[i][j] < min:
-            min = countMinSketch[i][j]
-        i += 1
-    return min
-
-# fill out countMinSketch
-with open(input, "r") as file:
-    for line in file:
-        if line[0] in bases:
-            line = line.strip()
-            for i in range(len(line) - k + 1):
-                kmer = ChooseStrand(line[i : i + k])
-                updateCount(kmer)
-
-# read values from countMinSketch
-with open(input, "r") as file:
-    for line in file:
-        if line[0] in bases:
-            line = line.strip()
-            for i in range(len(line) - k + 1):
-                kmer = ChooseStrand(line[i : i + k])
-                distribution[getCount(kmer)] += 1
-
-# write to tsv
-with open(output, "w") as file:
-    counter = 0
-    for count in distribution:
-        if distribution[count] == 0:
-            counter += 1
-        if counter >= 10:
-            break
-        file.write(str(count) + "\t" + str(distribution[count]) + "\n")
+    with open(output, "w") as file:
+        counter = 0
+        for count, num_kmers in distribution.items():
+            if num_kmers == 0:
+                counter += 1
+            if counter >= 10:
+                break
+            file.write(f"{count}\t{num_kmers}\n")
