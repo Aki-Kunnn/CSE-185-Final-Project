@@ -1,5 +1,3 @@
-# vanheusden/kmer_analysis.py
-
 import argparse
 import hashlib
 from typing import List
