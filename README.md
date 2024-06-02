@@ -10,19 +10,23 @@ Clone the repository and change directory:
 git clone https://github.com/Aki-Kunnn/vanheusden_est_CSE185.git
 
 cd vanheusden
+
+pip install -r requirements.txt
+
+pip install .
 ```
 
 # Example Usage
-The following command generated a random genome of length 10,000 and used that to simulate a fasta file with 1,000 reads of length 100 and an error rate of 0.001.
+The following command generated a random genome of length 10,000 and used that to simulate a fasta file with 10,000 reads of length 100 and an error rate of 0.001.
 
 ```
-python3 vanheusden.py generate -g 10000 -n 1000 -l 100 -e 0.001
+python3 vanheusden.py generate -g 10000 -n 10000 -l 100 -e 0.001
 ```
 
-Then the following command estimated the genome size to be 10124: 
+Then the following command estimated the genome size to be 10142: 
 
 ```
-python3 vanheusden.py estimate -k 20 g10000_n1000_l100_e0.001.fasta
+python3 vanheusden.py estimate -k 30 g10000_n10000_l100_e0.001.fastq
 ```
 
 # Options
