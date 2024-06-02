@@ -1,7 +1,10 @@
 import argparse
-import hashlib
 import random
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 from typing import List
+from collections import defaultdict
 
 bases = ["A", "T", "C", "G"]
 
@@ -28,7 +31,7 @@ def main():
         n = args.numberOfReads
         l = args.lengthOfReads
         e = args.errorRate 
-        output = "g" + str(g) + "_n" + str(n) + "_l" + str(l) + "_e" + str(e) + ".fasta"
+        output = "g" + str(g) + "_n" + str(n) + "_l" + str(l) + "_e" + str(e) + ".fastq"
 
         # used for generating errors in reads
         def GenerateError(nucleotide: str) -> str:
@@ -54,18 +57,18 @@ def main():
 
         # write to 
         with open(output, "w") as file:
-            file.write(">header\n")
+            file.write("@header\n")
             for read in reads:
-                file.write(read + "\n")
+                file.write(read + "\n" + "+" + "\n" + "I" * len(read) + "\n")
 
     elif args.function == "estimate":
         k = args.kmerLength
         input = args.reads
         output = "k" + str(k) + "_histogram.tsv"
 
-        distribution = {i: 0 for i in range(1, 500)}
-        width = 10000
-        numFunctions = 10
+        distribution = defaultdict(int)
+        bucketWidth = 10000
+        numHashFunctions = 10
 
         # used for ignoreDirectionality
         def ReverseComplement(pattern: str) -> str:
@@ -83,36 +86,20 @@ def main():
             return reverse_complement
         
         # Count-min sketch
-        countMinSketch = [[0 for j in range(width)] for i in range(numFunctions)]
+        countMinSketch = [[0 for j in range(bucketWidth)] for i in range(numHashFunctions)]
 
         # choose which strand will represent the sequence
         def ChooseStrand(kmer: str) -> str:
             kmerRev = ReverseComplement(kmer)
-            codeA = kmer.encode("utf-8")
-            codeB = kmerRev.encode("utf-8")
-            
-            sha1 = hashlib.sha1()
-            sha1.update(codeA)
-            a = int(sha1.hexdigest(), 16) % width
-
-            sha1 = hashlib.sha1()
-            sha1.update(codeB)
-            b = int(sha1.hexdigest(), 16) % width
-            if a < b:
+            if hash(kmer) < hash(kmerRev):
                 return kmer
             return kmerRev
 
         # return a list of hash values
         def Hashes(kmer: str) -> List[int]:
             hashes = []
-            functions = [hashlib.sha1(), hashlib.sha224(), hashlib.sha256(), 
-                        hashlib.sha384(), hashlib.sha512(), hashlib.sha3_224(), 
-                        hashlib.sha3_256(), hashlib.sha3_384(), hashlib.sha3_512(), 
-                        hashlib.md5()]
-            code = kmer.encode("utf-8")
-            for i in range(numFunctions):
-                functions[i].update(code)
-                hashes.append(int(functions[i].hexdigest(), 16) % width)
+            for i in range(numHashFunctions):
+                hashes.append(hash(str(i) + kmer) % bucketWidth)
             return hashes
         
         # update countMinSketch
@@ -142,7 +129,8 @@ def main():
                     line = line.strip()
                     for i in range(len(line) - k + 1):
                         kmer = ChooseStrand(line[i : i + k])
-                        distribution[getCount(kmer)] += 1
+                        abundance = getCount(kmer)
+                        distribution[abundance] += 1
 
         kmerCoverage = 0
         peak = 0
@@ -166,6 +154,16 @@ def main():
                 if counter >= 10:
                     break
                 file.write(f"{abundance}\t{numKmers}\n")
+
+        # generate graph
+        df = pd.DataFrame()
+        df["Abundance"] = distribution.keys()
+        df["Number of Kmers"] = distribution.values()
+        print(df.head())
+        sns.set_style("whitegrid")
+        fig, ax = plt.subplots(1, 1, figsize=(8, 4))
+        sns.barplot(data=df, x="Abundance", y="Number of Kmers", ax=ax)
+        plt.savefig("histogram.pdf")
 
     else:
         print("Please use \"vanheusden generate\" or \"vanheusden estimate\"")
