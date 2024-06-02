@@ -19,10 +19,10 @@ The following command generated a random genome of length 10,000 and used that t
 python3 vanheusden.py generate -g 10000 -n 1000 -l 100 -e 0.001
 ```
 
-Then the following command estimated the genome size to be 10199: 
+Then the following command estimated the genome size to be 10124: 
 
-```bash
-python3 vanheusden.py -k 50 g10000_n1000_l100_e0.001.fasta
+```
+python3 vanheusden.py estimate -k 20 g10000_n1000_l100_e0.001.fasta
 ```
 
 # Options
