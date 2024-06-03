@@ -9,7 +9,7 @@ Clone the repository and change directory:
 ```bash
 git clone https://github.com/Aki-Kunnn/vanheusden_est_CSE185.git
 
-cd vanheusden_est_CSE185
+cd ~/vanheusden_est_CSE185/vanheusden
 
 pip install -r requirements.txt
 
