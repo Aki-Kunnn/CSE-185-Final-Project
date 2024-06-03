@@ -34,7 +34,7 @@ python3 vanheusden.py estimate -k 30 g10000_n10000_l100_e0.001.fastq
 # Options
 python3 vanheusden.py generate -g [genome size] -n [number of reads] -l [length of reads] -e [error rate]
 
-python3 vanheusden.py estimate -k [kmer length] [fasta file]
+python3 vanheusden.py estimate [fasta file]
 
 # Contributors
 
