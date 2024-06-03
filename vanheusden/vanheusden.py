@@ -20,7 +20,7 @@ def main():
     parserGenerate.add_argument("-l", "--lengthOfReads", required=True, type = int)
     parserGenerate.add_argument("-e", "--errorRate", required=True, type=float)
 
-    parserEstimate.add_argument("-k", "--kmerLength", required=True, type=int)
+    #parserEstimate.add_argument("-k", "--kmerLength", required=True, type=int)
     parserEstimate.add_argument("reads")
 
     args = parser.parse_args()
@@ -62,13 +62,26 @@ def main():
                 file.write(read + "\n" + "+" + "\n" + "I" * len(read) + "\n")
 
     elif args.function == "estimate":
-        k = args.kmerLength
-        samplingRate = 10
-        input = args.reads
-        output = "k" + str(k) + "_histogram.tsv"
+        #k = args.kmerLength
 
-        distribution = defaultdict(int)
-        bucketWidth = 100000
+
+        input = args.reads
+
+        readLen = 999
+        lines = 0
+        with open(input, "r") as file:
+            for line in file:
+                if line[0] in bases:
+                    if len(line) - 1 < readLen:
+                        readLen = len(line) - 1
+                    lines += 1
+        
+        samplingRate = int(lines / 10000)
+        if samplingRate < 10:
+            samplingRate = 10
+        print("Sampling Rate\t" + str(samplingRate))
+
+        bucketWidth = 10000000
         numHashFunctions = 10
 
         # used for ignoreDirectionality
@@ -113,34 +126,113 @@ def main():
             return min(countMinSketch[i][j] for i, j in enumerate(Hashes(kmer)))
 
         # fill out countMinSketch
+        def getRatio(k: int) -> int:
+            distribution = defaultdict(int)
+            total = 0
+            counter = 0
+            with open(input, "r") as file:
+                for line in file:
+                    if line[0] in bases:
+
+                            line = line.strip()
+                            for i in range(len(line) - k + 1):
+                                if counter % samplingRate == 0:
+                                    kmer = ChooseStrand(line[i : i + k])
+                                    updateCount(kmer)
+                                    total += 1
+                                counter += 1
+
+            # read values from countMinSketch
+            counter = 0
+            with open(input, "r") as file:
+                for line in file:
+                    if line[0] in bases:
+
+                            line = line.strip()
+                            for i in range(len(line) - k + 1):
+                                    if counter % samplingRate == 0:
+                                        kmer = ChooseStrand(line[i : i + k])
+                                        abundance = getCount(kmer)
+                                        distribution[abundance] += 1
+                                    counter += 1
+
+            distribution = dict(sorted(distribution.items()))
+            valleyY = float("inf")
+            valleyX = -1
+            abundance = list(distribution.keys())
+            numKmers = list(distribution.values())
+            errors = 0
+            for i in range(len(abundance)):
+                x = abundance[i]
+                y = numKmers[i]
+                if valleyY > y:
+                    errors += y
+                    valleyY = y
+                    valleyX = x
+                else:
+                    break
+
+            output = "k" + str(k) + "_histogram.tsv"
+            with open(output, "w") as file:
+                for x, y in distribution.items():
+                    file.write(str(x) + "\t" + str(y) + "\n")
+
+            if valleyX >= len(abundance):
+                return 999
+
+            ratio = numKmers[valleyX - 1] / (errors - numKmers[valleyX - 1])
+            return ratio
+
+        k = 10
+        ratio = 999
+        counter = 0
+        for i in range(10, readLen, 10):
+            curr = getRatio(i)
+            print(str(i) + "\t" + str(curr))
+            if curr <= ratio:
+                ratio = curr
+                k = i
+            else:
+                counter += 1
+                if counter >= 3:
+                    break
+            # Count-min sketch
+            countMinSketch = [[0 for j in range(bucketWidth)] for i in range(numHashFunctions)]
+
+        distribution = defaultdict(int)
         total = 0
         counter = 0
         with open(input, "r") as file:
             for line in file:
                 if line[0] in bases:
-                    if counter % samplingRate == 0:
-                        line = line.strip()
-                        for i in range(len(line) - k + 1):
+
+                    line = line.strip()
+                    for i in range(len(line) - k + 1):
+                        if counter % samplingRate == 0:
                             kmer = ChooseStrand(line[i : i + k])
                             updateCount(kmer)
                             total += 1
-                    counter += 1
+                        counter += 1
+
 
         # read values from countMinSketch
         counter = 0
         with open(input, "r") as file:
             for line in file:
                 if line[0] in bases:
-                    if counter % samplingRate == 0:
-                        line = line.strip()
-                        for i in range(len(line) - k + 1):
+
+                    line = line.strip()
+                    for i in range(len(line) - k + 1):
+                            if counter % samplingRate == 0:
                                 kmer = ChooseStrand(line[i : i + k])
                                 abundance = getCount(kmer)
                                 distribution[abundance] += 1
-                    counter += 1
+                            counter += 1
+
+        distribution = dict(sorted(distribution.items()))
 
         # write to tsv
-        distribution = dict(sorted(distribution.items()))
+        output = "k" + str(k) + "_histogram.tsv"
         with open(output, "w") as file:
             for x, y in distribution.items():
                 file.write(str(x) + "\t" + str(y) + "\n")
@@ -149,21 +241,24 @@ def main():
         valleyX = -1
         abundance = list(distribution.keys())
         numKmers = list(distribution.values())
+        errors = 0
         for i in range(len(abundance)):
             x = abundance[i]
             y = numKmers[i]
             if valleyY > y:
+                errors += y
                 valleyY = y
                 valleyX = x
             else:
                 break
-
         peakY = max(numKmers[valleyX:])
         peakX = abundance[numKmers.index(peakY)]
 
         genomeSize = int(total / peakX)
         print("Total number of kmers:\t" + str(total))
         print("Kmer coverage:\t" + str(peakX))
+        print("Ratio:\t" + str(ratio))
+        print("Best k:\t" + str(k))
         print("Estimated genome size:\t" + str(genomeSize))
 
         # generate graph
