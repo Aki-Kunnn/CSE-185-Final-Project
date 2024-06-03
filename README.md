@@ -9,11 +9,13 @@ Clone the repository and change directory:
 ```bash
 git clone https://github.com/Aki-Kunnn/vanheusden_est_CSE185.git
 
-cd ~/vanheusden_est_CSE185/vanheusden
+cd ~/vanheusden_est_CSE185
 
 pip install -r requirements.txt
 
 pip install .
+
+cd vanheusden
 ```
 
 # Example Usage
@@ -26,13 +28,13 @@ python3 vanheusden.py generate -g 10000 -n 10000 -l 100 -e 0.001
 Then the following command estimated the genome size to be 10142: 
 
 ```
-python3 vanheusden.py estimate -k 30 g10000_n10000_l100_e0.001.fastq
+python3 vanheusden.py estimate g10000_n10000_l100_e0.001.fastq
 ```
 
 # Options
 python3 vanheusden.py generate -g [genome size] -n [number of reads] -l [length of reads] -e [error rate]
 
-python3 vanheusden.py estimate -k [kmer length] [fasta file]
+python3 vanheusden.py estimate [fasta file]
 
 # Contributors
 
