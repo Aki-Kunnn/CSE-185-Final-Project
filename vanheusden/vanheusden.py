@@ -280,7 +280,11 @@ def main():
                 valleyX = x
             else:
                 break
-        peakY = max(numKmers[valleyX:])
+        peakY = -1
+        if valleyX < len(abundance):
+            peakY = max(numKmers[valleyX + 1:])
+        else:
+            peakY = numKmers[0]
         peakX = abundance[numKmers.index(peakY)]
 
         genomeSize = int(total / peakX)

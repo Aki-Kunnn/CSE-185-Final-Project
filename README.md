@@ -22,13 +22,13 @@ cd vanheusden
 The following command generated a random genome of length 10,000 and used that to simulate a fasta file with 10,000 reads of length 100 and an error rate of 0.001.
 
 ```
-python3 vanheusden.py generate -g 10000 -n 10000 -l 100 -e 0.001
+python3 vanheusden.py generate -g 10000 -n 10000 -l 100 -e 0.005
 ```
 
-Then the following command estimated the genome size to be 10142: 
+Then the following command estimated the genome size to be 10125: 
 
 ```
-python3 vanheusden.py estimate g10000_n10000_l100_e0.001.fastq
+python3 vanheusden.py estimate g10000_n10000_l100_e0.005.fastq
 ```
 
 # Options
