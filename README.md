@@ -9,11 +9,13 @@ Clone the repository and change directory:
 ```bash
 git clone https://github.com/Aki-Kunnn/vanheusden_est_CSE185.git
 
-cd ~/vanheusden_est_CSE185/vanheusden
+cd ~/vanheusden_est_CSE185
 
 pip install -r requirements.txt
 
 pip install .
+
+cd vanheusden
 ```
 
 # Example Usage
