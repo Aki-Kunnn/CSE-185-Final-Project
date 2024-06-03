@@ -28,7 +28,7 @@ python3 vanheusden.py generate -g 10000 -n 10000 -l 100 -e 0.001
 Then the following command estimated the genome size to be 10142: 
 
 ```
-python3 vanheusden.py estimate -k 30 g10000_n10000_l100_e0.001.fastq
+python3 vanheusden.py estimate g10000_n10000_l100_e0.001.fastq
 ```
 
 # Options
