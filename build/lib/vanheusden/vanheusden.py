@@ -3,6 +3,7 @@ import random
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import time
 from typing import List
 from collections import defaultdict
 
@@ -20,7 +21,7 @@ def main():
     parserGenerate.add_argument("-l", "--lengthOfReads", required=True, type = int)
     parserGenerate.add_argument("-e", "--errorRate", required=True, type=float)
 
-    #parserEstimate.add_argument("-k", "--kmerLength", required=True, type=int)
+    parserEstimate.add_argument("-k", "--kmerLength", required=True, type=int)
     parserEstimate.add_argument("reads")
 
     args = parser.parse_args()
@@ -62,24 +63,28 @@ def main():
                 file.write(read + "\n" + "+" + "\n" + "I" * len(read) + "\n")
 
     elif args.function == "estimate":
-        #k = args.kmerLength
+        start = time.time()
 
-
+        k = args.kmerLength
         input = args.reads
-
         readLen = 999
-        lines = 0
-        with open(input, "r") as file:
+        reads = 0
+
+        with open(input) as file:
             for line in file:
                 if line[0] in bases:
+                    reads += 1
                     if len(line) - 1 < readLen:
                         readLen = len(line) - 1
-                    lines += 1
-        
-        samplingRate = int(lines / 10000)
-        if samplingRate < 10:
-            samplingRate = 10
-        print("Sampling Rate\t" + str(samplingRate))
+
+        print("k:\t" + str(k))
+        print("Reads: " + str(reads))
+        print("Read Length:\t" + str(readLen))
+        #samplingRate = int(lines / 10000)
+
+
+        samplingRate = 10
+        print("Sampling Rate:\t" + str(samplingRate))
 
         bucketWidth = 10000000
         numHashFunctions = 10
@@ -133,28 +138,26 @@ def main():
             with open(input, "r") as file:
                 for line in file:
                     if line[0] in bases:
-
+                        if counter % samplingRate == 0:
                             line = line.strip()
                             for i in range(len(line) - k + 1):
-                                if counter % samplingRate == 0:
-                                    kmer = ChooseStrand(line[i : i + k])
-                                    updateCount(kmer)
-                                    total += 1
-                                counter += 1
+                                kmer = ChooseStrand(line[i : i + k])
+                                updateCount(kmer)
+                                total += 1
+                        counter += 1
 
             # read values from countMinSketch
             counter = 0
             with open(input, "r") as file:
                 for line in file:
                     if line[0] in bases:
-
+                        if counter % samplingRate == 0:
                             line = line.strip()
                             for i in range(len(line) - k + 1):
-                                    if counter % samplingRate == 0:
-                                        kmer = ChooseStrand(line[i : i + k])
-                                        abundance = getCount(kmer)
-                                        distribution[abundance] += 1
-                                    counter += 1
+                                kmer = ChooseStrand(line[i : i + k])
+                                abundance = getCount(kmer)
+                                distribution[abundance] += 1
+                        counter += 1
 
             distribution = dict(sorted(distribution.items()))
             valleyY = float("inf")
@@ -177,16 +180,20 @@ def main():
                 for x, y in distribution.items():
                     file.write(str(x) + "\t" + str(y) + "\n")
 
+            print(numKmers[valleyX - 1])
+            print((errors - numKmers[valleyX - 1]))
+
             if valleyX >= len(abundance):
                 return 999
 
             ratio = numKmers[valleyX - 1] / (errors - numKmers[valleyX - 1])
             return ratio
 
+        """
         k = 10
         ratio = 999
         counter = 0
-        for i in range(10, readLen, 10):
+        for i in range(20, readLen, 20):
             curr = getRatio(i)
             print(str(i) + "\t" + str(curr))
             if curr <= ratio:
@@ -198,6 +205,13 @@ def main():
                     break
             # Count-min sketch
             countMinSketch = [[0 for j in range(bucketWidth)] for i in range(numHashFunctions)]
+        """
+
+        pct1 = int(0.01 * reads)
+        pct10 = int(0.10 * reads)
+        pct25 = int(0.25 * reads)
+        pct50 = int(0.5 * reads)
+        pct75 = int(0.75 * reads)
 
         distribution = defaultdict(int)
         total = 0
@@ -205,29 +219,44 @@ def main():
         with open(input, "r") as file:
             for line in file:
                 if line[0] in bases:
-
-                    line = line.strip()
-                    for i in range(len(line) - k + 1):
-                        if counter % samplingRate == 0:
+                    if counter % samplingRate == 0:
+                        line = line.strip()
+                        for i in range(len(line) - k + 1):
                             kmer = ChooseStrand(line[i : i + k])
                             updateCount(kmer)
                             total += 1
-                        counter += 1
+                    counter += 1
+                    if counter == pct1:
+                        end = time.time()
+                        print("Kmer Hashing:\t1% in " + str(round(end - start, 2)) + "s")
+                    if counter == pct10:
+                        end = time.time()
+                        print("Kmer Hashing:\t10% in " + str(round(end - start, 2)) + "s")
+                    if counter == pct25:
+                        end = time.time()
+                        print("Kmer Hashing:\t25% in " + str(round(end - start, 2)) + "s")
+                    if counter == pct50:
+                        end = time.time()
+                        print("Kmer Hashing:\t50% in " + str(round(end - start, 2)) + "s")
+                    if counter == pct75:
+                        end = time.time()
+                        print("Kmer Hashing:\t75% in " + str(round(end - start, 2)) + "s")
 
-
+        end = time.time()
+        print("Kmer Hashing:\t100% in " + str(round(end - start, 2)) + "s")
+        print("Kmer Counting...")
         # read values from countMinSketch
         counter = 0
         with open(input, "r") as file:
             for line in file:
                 if line[0] in bases:
-
-                    line = line.strip()
-                    for i in range(len(line) - k + 1):
-                            if counter % samplingRate == 0:
-                                kmer = ChooseStrand(line[i : i + k])
-                                abundance = getCount(kmer)
-                                distribution[abundance] += 1
-                            counter += 1
+                    if counter % samplingRate == 0:
+                        line = line.strip()
+                        for i in range(len(line) - k + 1):
+                            kmer = ChooseStrand(line[i : i + k])
+                            abundance = getCount(kmer)
+                            distribution[abundance] += 1
+                    counter += 1
 
         distribution = dict(sorted(distribution.items()))
 
@@ -257,8 +286,7 @@ def main():
         genomeSize = int(total / peakX)
         print("Total number of kmers:\t" + str(total))
         print("Kmer coverage:\t" + str(peakX))
-        print("Ratio:\t" + str(ratio))
-        print("Best k:\t" + str(k))
+        #print("Ratio:\t" + str(ratio))
         print("Estimated genome size:\t" + str(genomeSize))
 
         # generate graph
@@ -280,6 +308,9 @@ def main():
                 label.set_visible(False)
 
         plt.savefig("k" + str(k) + "_histogram.pdf")
+
+        end = time.time()
+        print("Complete in " + str(round(end - start, 2)) + "s")
 
     else:
         print("Please use \"vanheusden generate\" or \"vanheusden estimate\"")
